@@ -60,7 +60,8 @@ public class UsuarioService {
         }
 
         usuario.setPassword(passwordEncoder.encode(password));
-        Rol rolCliente = rolRepository.findByNombre("CLIENTE").orElseThrow(() -> new IllegalArgumentException("Rol 'CLIENTE' no encontrado"));
+        Rol rolCliente = rolRepository.findByNombre("CLIENTE")
+                .orElseGet(() -> rolRepository.saveAndFlush(new Rol("CLIENTE")));
         usuario.setRoles(new java.util.HashSet<>(Set.of(rolCliente)));
         return usuarioRepository.save(usuario);
     }

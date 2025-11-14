@@ -180,27 +180,30 @@ class UsuarioServiceTest {
     }
 
     @Test
-    @DisplayName("Debería lanzar excepción cuando no encuentra el rol CLIENTE")
-    void deberiaLanzarExcepcionCuandoNoEncuentraRolCliente() {
+    @DisplayName("Debería crear el rol CLIENTE cuando no existe")
+    void deberiaCrearRolClienteCuandoNoExiste() {
         // Given
         String password = "password123";
         String verificacionPassword = "password123";
+        Rol nuevoRol = new Rol();
+        nuevoRol.setId(3L);
+        nuevoRol.setNombre("CLIENTE");
 
         when(usuarioRepository.existsByUsernameIgnoreCase(usuarioEjemplo.getUsername())).thenReturn(false);
         when(passwordEncoder.encode(password)).thenReturn("encrypted_password");
         when(rolRepository.findByNombre("CLIENTE")).thenReturn(Optional.empty());
+        when(rolRepository.saveAndFlush(any(Rol.class))).thenReturn(nuevoRol);
+        when(usuarioRepository.save(usuarioEjemplo)).thenReturn(usuarioEjemplo);
 
-        // When & Then
-        IllegalArgumentException excepcion = assertThrows(IllegalArgumentException.class,
-                () -> usuarioService.registrar(usuarioEjemplo, password, verificacionPassword));
+        // When
+        Usuario resultado = usuarioService.registrar(usuarioEjemplo, password, verificacionPassword);
 
-        assertEquals("Rol 'CLIENTE' no encontrado", excepcion.getMessage());
-
-        // Verificar que se realizaron las verificaciones previas
-        verify(usuarioRepository, times(1)).existsByUsernameIgnoreCase(usuarioEjemplo.getUsername());
-        verify(passwordEncoder, times(1)).encode(password);
+        // Then
+        assertNotNull(resultado);
+        assertTrue(resultado.getRoles().stream().anyMatch(rol -> "CLIENTE".equals(rol.getNombre())));
         verify(rolRepository, times(1)).findByNombre("CLIENTE");
-        verify(usuarioRepository, never()).save(any());
+        verify(rolRepository, times(1)).saveAndFlush(any(Rol.class));
+        verify(usuarioRepository, times(1)).save(usuarioEjemplo);
     }
 
     @Test
